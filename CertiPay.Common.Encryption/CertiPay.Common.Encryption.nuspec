@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>CertiPay.Common.Encryption</id>
+    <version>1.0.0</version>
+    <title>CertiPay.Common.Encryption</title>
+    <tags>certipay, utilities, pgp</tags>
+    <description>A simple wrapper around BouncyCastle pgp encryption</description>
+    <projectUrl>https://github.com/CertiPay/CertiPay.Common.Encryption</projectUrl>
+    <licenseUrl>https://github.com/CertiPay/CertiPay.Common.Encryption/blob/master/LICENSE.md</licenseUrl>
+    <authors>CertiPay, Matt Wagner</authors>
+    <owners>Matt Wagner</owners>
+  </metadata>
+  <files>
+    <file src="bin\Release\CertiPay.Common.Encryption*" target="lib\net451" />
+    <file src="..\README.md" target="tools" />
+    <file src="..\LICENSE.md" target="tools" />
+  </files>
+</package>

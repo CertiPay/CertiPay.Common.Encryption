@@ -4,13 +4,11 @@ $Here = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 
 $SolutionFile = Join-Path $Here "CertiPay.Common.Encryption.sln"
 
+$NuGet = Join-Path $Here ".nuget\nuget.exe"
+
 ## This comes from the build server iteration
 if(!$BuildNumber) { $BuildNumber = $env:APPVEYOR_BUILD_NUMBER }
 if(!$BuildNumber) { $BuildNumber = "1"}
-
-## This comes from the Hg commit hash used to build
-if(!$CommitHash) { $CommitHash = $env:APPVEYOR_REPO_COMMIT }
-if(!$CommitHash) { $CommitHash = "local-build" }
 
 ## The build configuration, i.e. Debug/Release
 if(!$Configuration) { $Configuration = $env:Configuration }
@@ -26,5 +24,7 @@ $MSBuild = "${env:ProgramFiles(x86)}\MSBuild\12.0\Bin\msbuild.exe"
 # Build the solution
 
 & $MSBuild $SolutionFile /v:quiet /p:Configuration=$Configuration 
+
+& $NuGet pack "$Here\CertiPay.Common.Encryption\CertiPay.Common.Encryption.nuspec" -Properties Configuration=$Configuration -OutputDirectory "$Here" -Version "$Version"
 
 EXIT $LASTEXITCODE
