@@ -10,6 +10,9 @@
     <licenseUrl>https://github.com/CertiPay/CertiPay.Common.Encryption/blob/master/LICENSE.md</licenseUrl>
     <authors>CertiPay, Matt Wagner</authors>
     <owners>Matt Wagner</owners>
+    <dependencies>
+      <dependency id="BouncyCastle" version="(1.7,)"/>
+    </dependencies>
   </metadata>
   <files>
     <file src="bin\Release\CertiPay.Common.Encryption*" target="lib\net451" />
