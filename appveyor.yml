@@ -10,7 +10,7 @@
 version: 0.1.{build}
 
 install: 
-  - cmd: git submodule update --init --recursive
+  - cmd: nuget restore
 
 #---------------------------------#
 #       build configuration       #
