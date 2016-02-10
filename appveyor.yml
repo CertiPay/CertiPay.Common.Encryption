@@ -32,9 +32,6 @@ assembly_info:
   assembly_file_version: "{version}"
   assembly_informational_version: "{version}"
 
-# to disable automatic tests 
-test: off
-
 #---------------------------------#
 #       artifacts configuration   #
 #---------------------------------#
@@ -45,4 +42,4 @@ nuget:
   disable_publish_on_pr: true     # disable publishing of .nupkg artifacts to account/project feeds for pull request builds
 
 artifacts:
-  - path: '**\CertiPay.*.nupkg'
+  - path: '**\CertiPay.Common.Encryption.**.nupkg'
