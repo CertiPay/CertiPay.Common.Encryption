@@ -75,19 +75,16 @@ akTDHA==
                 var key = stream.ImportPublicKey();
 
                 using (var clearStream = input.Streamify())
+                using (var cryptoStream = clearStream.PgpEncrypt(key))
                 {
-                    var cryptoStream = clearStream.PgpEncrypt(key);
-
                     cryptoString = cryptoStream.Stringify();
                 }
             }
 
             using (var stream = cryptoString.Streamify())
+            using (var clearStream = stream.PgpDecrypt(privateKey, passphrase))
             {
-                using (var clearStream = stream.PgpDecrypt(privateKey, passphrase))
-                {
-                    Assert.AreEqual(input, clearStream.Stringify());
-                }
+                Assert.AreEqual(input, clearStream.Stringify());
             }
         }
     }
