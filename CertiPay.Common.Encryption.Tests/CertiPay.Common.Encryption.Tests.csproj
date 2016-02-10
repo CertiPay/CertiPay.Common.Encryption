@@ -81,11 +81,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CryptoHelperTests.cs" />
+    <Compile Include="PGPUtilitiesTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CertiPay.Common.Encryption\CertiPay.Common.Encryption.csproj">
+      <Project>{34ad359e-f320-40d5-9d8b-834144baa536}</Project>
+      <Name>CertiPay.Common.Encryption</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\lib\bouncycastle\crypto\BouncyCastle.csproj">
+      <Project>{4c235092-820c-4deb-9074-d356fb797d8b}</Project>
+      <Name>BouncyCastle</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
