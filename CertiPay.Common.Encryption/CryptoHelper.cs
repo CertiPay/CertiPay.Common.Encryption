@@ -10,6 +10,44 @@ namespace CertiPay.Common.Encryption
     {
         // The majority of the functionality encrypting/decrypting came from this answer: http://stackoverflow.com/a/10210465
 
+        public static void EncryptPgpFile(string inputFile, string outputFile, string publicKeyFile, bool armor, bool withIntegrityCheck)
+        {
+            using (Stream publicKeyStream = File.OpenRead(publicKeyFile))
+            {
+                PgpPublicKey pubKey = ReadPublicKey(publicKeyStream);
+
+                using (MemoryStream outputBytes = new MemoryStream())
+                {
+                    PgpCompressedDataGenerator dataCompressor = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
+
+                    PgpUtilities.WriteFileToLiteralData(dataCompressor.Open(outputBytes), PgpLiteralData.Binary, new FileInfo(inputFile));
+
+                    dataCompressor.Close();
+
+                    PgpEncryptedDataGenerator dataGenerator = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityCheck, new SecureRandom());
+
+                    dataGenerator.AddMethod(pubKey);
+
+                    byte[] dataBytes = outputBytes.ToArray();
+
+                    using (Stream outputStream = File.Create(outputFile))
+                    {
+                        if (armor)
+                        {
+                            using (ArmoredOutputStream armoredStream = new ArmoredOutputStream(outputStream))
+                            {
+                                WriteStream(dataGenerator.Open(armoredStream, dataBytes.Length), ref dataBytes);
+                            }
+                        }
+                        else
+                        {
+                            WriteStream(dataGenerator.Open(outputStream, dataBytes.Length), ref dataBytes);
+                        }
+                    }
+                }
+            }
+        }
+
         public static string DecryptPgpData(Stream inputStream, Stream privateKeyStream, string passPhrase)
         {
             string output;
@@ -145,44 +183,6 @@ namespace CertiPay.Common.Encryption
             }
 
             throw new ArgumentException("Can't find encryption key in key ring.");
-        }
-
-        public static void EncryptPgpFile(string inputFile, string outputFile, string publicKeyFile, bool armor, bool withIntegrityCheck)
-        {
-            using (Stream publicKeyStream = File.OpenRead(publicKeyFile))
-            {
-                PgpPublicKey pubKey = ReadPublicKey(publicKeyStream);
-
-                using (MemoryStream outputBytes = new MemoryStream())
-                {
-                    PgpCompressedDataGenerator dataCompressor = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
-
-                    PgpUtilities.WriteFileToLiteralData(dataCompressor.Open(outputBytes), PgpLiteralData.Binary, new FileInfo(inputFile));
-
-                    dataCompressor.Close();
-
-                    PgpEncryptedDataGenerator dataGenerator = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityCheck, new SecureRandom());
-
-                    dataGenerator.AddMethod(pubKey);
-
-                    byte[] dataBytes = outputBytes.ToArray();
-
-                    using (Stream outputStream = File.Create(outputFile))
-                    {
-                        if (armor)
-                        {
-                            using (ArmoredOutputStream armoredStream = new ArmoredOutputStream(outputStream))
-                            {
-                                WriteStream(dataGenerator.Open(armoredStream, dataBytes.Length), ref dataBytes);
-                            }
-                        }
-                        else
-                        {
-                            WriteStream(dataGenerator.Open(outputStream, dataBytes.Length), ref dataBytes);
-                        }
-                    }
-                }
-            }
         }
 
         internal static string GetString(Stream inputStream)
