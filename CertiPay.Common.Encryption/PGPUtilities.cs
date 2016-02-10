@@ -67,7 +67,7 @@ public static class PGPUtilities
             var buffer = new byte[1024];
 
             using (var literalOut = new MemoryStream())
-            using (var literalStream = literalizer.Open(literalOut, 'b', "STREAM", DateTime.UtcNow, buffer))
+            using (var literalStream = literalizer.Open(literalOut, PgpLiteralData.Binary, "STREAM", DateTime.UtcNow, buffer))
             {
                 literalStream.Write(rawData, 0, rawData.Length);
                 literalStream.Close();
@@ -98,28 +98,23 @@ public static class PGPUtilities
 
     public static Stream PgpDecrypt(this Stream encryptedData, string armoredPrivateKey, string privateKeyPassword, Encoding armorEncoding = null)
     {
-        armorEncoding = armorEncoding ?? Encoding.UTF8;
         var stream = PgpUtilities.GetDecoderStream(encryptedData);
         var layeredStreams = new List<Stream> { stream }; //this is to clean up/ dispose of any layered streams.
         var dataObjectFactory = new PgpObjectFactory(stream);
         var dataObject = dataObjectFactory.NextPgpObject();
         Dictionary<long, PgpSecretKey> secretKeys;
 
-        using (var privateKeyStream = armoredPrivateKey.Streamify(armorEncoding))
+        using (var privateKeyStream = armoredPrivateKey.Streamify(armorEncoding ?? Encoding.UTF8))
+        using (var decoderStream = PgpUtilities.GetDecoderStream(privateKeyStream))
         {
-            var secRings =
-                new PgpSecretKeyRingBundle(PgpUtilities.GetDecoderStream(privateKeyStream))
-                .GetKeyRings()
-                .OfType<PgpSecretKeyRing>();
-
-            var pgpSecretKeyRings = secRings as PgpSecretKeyRing[] ?? secRings.ToArray();
-
-            if (!pgpSecretKeyRings.Any()) throw new ArgumentException("No secret keys found.");
-
             secretKeys =
-                pgpSecretKeyRings
+                new PgpSecretKeyRingBundle(decoderStream)
+                .GetKeyRings()
+                .OfType<PgpSecretKeyRing>()
                 .SelectMany(x => x.GetSecretKeys().OfType<PgpSecretKey>())
                 .ToDictionary(key => key.KeyId, value => value);
+
+            if (!secretKeys.Any()) throw new ArgumentException("No secret keys found.");
         }
 
         while (!(dataObject is PgpLiteralData) && dataObject != null)
