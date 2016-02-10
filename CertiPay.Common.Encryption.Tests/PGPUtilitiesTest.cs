@@ -1,7 +1,6 @@
 ﻿using CertiPay.Common.Testing;
 using NUnit.Framework;
 using System;
-using System.IO;
 
 namespace CertiPay.Common.Encryption.Tests
 {
@@ -76,11 +75,8 @@ akTDHA==
                 var key = stream.ImportPublicKey();
 
                 using (var clearStream = input.Streamify())
-                using (var cryptoStream = new MemoryStream())
                 {
-                    clearStream.PgpEncrypt(cryptoStream, key);
-
-                    cryptoStream.Position = 0;
+                    var cryptoStream = clearStream.PgpEncrypt(key);
 
                     cryptoString = cryptoStream.Stringify();
                 }

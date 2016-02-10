@@ -44,11 +44,14 @@ public static class PGPUtilities
         }
     }
 
-    public static void PgpEncrypt(this Stream toEncrypt, Stream outStream, PgpPublicKey encryptionKey, bool armor = true, bool verify = false, CompressionAlgorithmTag compressionAlgorithm = CompressionAlgorithmTag.Zip)
+    public static Stream PgpEncrypt(this Stream toEncrypt, PgpPublicKey encryptionKey, bool armor = true, bool verify = false)
     {
+        var outStream = new MemoryStream();
+
         var encryptor = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, verify, new SecureRandom());
         var literalizer = new PgpLiteralDataGenerator();
-        var compressor = new PgpCompressedDataGenerator(compressionAlgorithm);
+        var compressor = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
+
         encryptor.AddMethod(encryptionKey);
 
         //it would be nice if these streams were read/write, and supported seeking.  Since they are not,
@@ -62,6 +65,7 @@ public static class PGPUtilities
             //other "interim" streams are required.  The raw data is encapsulated in a "Literal" PGP object.
             var rawData = toEncrypt.ReadFully();
             var buffer = new byte[1024];
+
             using (var literalOut = new MemoryStream())
             using (var literalStream = literalizer.Open(literalOut, 'b', "STREAM", DateTime.UtcNow, buffer))
             {
@@ -86,6 +90,10 @@ public static class PGPUtilities
                 }
             }
         }
+
+        outStream.Position = 0;
+
+        return outStream;
     }
 
     public static Stream PgpDecrypt(this Stream encryptedData, string armoredPrivateKey, string privateKeyPassword, Encoding armorEncoding = null)
