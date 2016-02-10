@@ -1,7 +1,6 @@
 ﻿using Org.BouncyCastle.Bcpg;
 using Org.BouncyCastle.Bcpg.OpenPgp;
 using Org.BouncyCastle.Security;
-using Org.BouncyCastle.Utilities.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +9,8 @@ using System.Text;
 
 public static class PGPUtilities
 {
+    private static readonly Encoding DefaultEncoding = Encoding.UTF8;
+
     public static PgpPublicKey ImportPublicKey(this Stream publicIn)
     {
         return
@@ -22,54 +23,28 @@ public static class PGPUtilities
 
     public static PgpSecretKey ImportSecretKey(this Stream secretIn)
     {
-        var secRings =
-            new PgpSecretKeyRingBundle(PgpUtilities.GetDecoderStream(secretIn)).GetKeyRings().OfType<PgpSecretKeyRing>();
-        var secKeys = secRings.SelectMany(x => x.GetSecretKeys().OfType<PgpSecretKey>());
-        var secKey = secKeys.FirstOrDefault();
-        return secKey;
+        return
+            new PgpSecretKeyRingBundle(PgpUtilities.GetDecoderStream(secretIn))
+            .GetKeyRings()
+            .OfType<PgpSecretKeyRing>()
+            .SelectMany(x => x.GetSecretKeys().OfType<PgpSecretKey>())
+            .FirstOrDefault();
     }
 
     public static Stream Streamify(this string theString, Encoding encoding = null)
     {
-        encoding = encoding ?? Encoding.UTF8;
-        var stream = new MemoryStream(encoding.GetBytes(theString));
-        return stream;
+        return new MemoryStream((encoding ?? DefaultEncoding).GetBytes(theString));
     }
 
-    public static string Stringify(this Stream theStream,
-                                   Encoding encoding = null)
+    public static string Stringify(this Stream theStream, Encoding encoding = null)
     {
-        encoding = encoding ?? Encoding.UTF8;
-        using (var reader = new StreamReader(theStream, encoding))
+        using (var reader = new StreamReader(theStream, encoding ?? DefaultEncoding))
         {
             return reader.ReadToEnd();
         }
     }
 
-    public static byte[] ReadFully(this Stream stream, int position = 0)
-    {
-        if (!stream.CanRead) throw new ArgumentException("This is not a readable stream.");
-        if (stream.CanSeek) stream.Position = 0;
-        var buffer = new byte[32768];
-        using (var ms = new MemoryStream())
-        {
-            while (true)
-            {
-                var read = stream.Read(buffer, 0, buffer.Length);
-                if (read <= 0)
-                    return ms.ToArray();
-                ms.Write(buffer, 0, read);
-            }
-        }
-    }
-
-    public static void PgpEncrypt(
-        this Stream toEncrypt,
-        Stream outStream,
-        PgpPublicKey encryptionKey,
-        bool armor = true,
-        bool verify = false,
-        CompressionAlgorithmTag compressionAlgorithm = CompressionAlgorithmTag.Zip)
+    public static void PgpEncrypt(this Stream toEncrypt, Stream outStream, PgpPublicKey encryptionKey, bool armor = true, bool verify = false, CompressionAlgorithmTag compressionAlgorithm = CompressionAlgorithmTag.Zip)
     {
         var encryptor = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, verify, new SecureRandom());
         var literalizer = new PgpLiteralDataGenerator();
@@ -77,8 +52,8 @@ public static class PGPUtilities
         encryptor.AddMethod(encryptionKey);
 
         //it would be nice if these streams were read/write, and supported seeking.  Since they are not,
-        //we need to shunt the data to a read/write stream so that we can control the flow of data as
-        //we go.
+        //we need to shunt the data to a read/write stream so that we can control the flow of data as we go.
+
         using (var stream = new MemoryStream()) // this is the read/write stream
         using (var armoredStream = armor ? new ArmoredOutputStream(stream) : stream as Stream)
         using (var compressedStream = compressor.Open(armoredStream))
@@ -113,11 +88,7 @@ public static class PGPUtilities
         }
     }
 
-    public static Stream PgpDecrypt(
-    this Stream encryptedData,
-    string armoredPrivateKey,
-    string privateKeyPassword,
-    Encoding armorEncoding = null)
+    public static Stream PgpDecrypt(this Stream encryptedData, string armoredPrivateKey, string privateKeyPassword, Encoding armorEncoding = null)
     {
         armorEncoding = armorEncoding ?? Encoding.UTF8;
         var stream = PgpUtilities.GetDecoderStream(encryptedData);
@@ -129,12 +100,18 @@ public static class PGPUtilities
         using (var privateKeyStream = armoredPrivateKey.Streamify(armorEncoding))
         {
             var secRings =
-                new PgpSecretKeyRingBundle(PgpUtilities.GetDecoderStream(privateKeyStream)).GetKeyRings()
-                                                                                           .OfType<PgpSecretKeyRing>();
+                new PgpSecretKeyRingBundle(PgpUtilities.GetDecoderStream(privateKeyStream))
+                .GetKeyRings()
+                .OfType<PgpSecretKeyRing>();
+
             var pgpSecretKeyRings = secRings as PgpSecretKeyRing[] ?? secRings.ToArray();
+
             if (!pgpSecretKeyRings.Any()) throw new ArgumentException("No secret keys found.");
-            secretKeys = pgpSecretKeyRings.SelectMany(x => x.GetSecretKeys().OfType<PgpSecretKey>())
-                                          .ToDictionary(key => key.KeyId, value => value);
+
+            secretKeys =
+                pgpSecretKeyRings
+                .SelectMany(x => x.GetSecretKeys().OfType<PgpSecretKey>())
+                .ToDictionary(key => key.KeyId, value => value);
         }
 
         while (!(dataObject is PgpLiteralData) && dataObject != null)
@@ -142,25 +119,36 @@ public static class PGPUtilities
             try
             {
                 var compressedData = dataObject as PgpCompressedData;
+
                 var listedData = dataObject as PgpEncryptedDataList;
 
                 //strip away the compression stream
                 if (compressedData != null)
                 {
                     stream = compressedData.GetDataStream();
+
                     layeredStreams.Add(stream);
+
                     dataObjectFactory = new PgpObjectFactory(stream);
                 }
 
                 //strip the PgpEncryptedDataList
                 if (listedData != null)
                 {
-                    var encryptedDataList = listedData.GetEncryptedDataObjects()
-                                                      .OfType<PgpPublicKeyEncryptedData>().First();
-                    var decryptionKey = secretKeys[encryptedDataList.KeyId]
+                    var encryptedDataList =
+                        listedData.
+                        GetEncryptedDataObjects()
+                        .OfType<PgpPublicKeyEncryptedData>()
+                        .First();
+
+                    var decryptionKey =
+                        secretKeys[encryptedDataList.KeyId]
                         .ExtractPrivateKey(privateKeyPassword.ToCharArray());
+
                     stream = encryptedDataList.GetDataStream(decryptionKey);
+
                     layeredStreams.Add(stream);
+
                     dataObjectFactory = new PgpObjectFactory(stream);
                 }
 
@@ -181,13 +169,20 @@ public static class PGPUtilities
 
         if (dataObject == null) return null;
 
-        var literalData = (PgpLiteralData)dataObject;
-        var ms = new MemoryStream();
-        using (var clearData = literalData.GetInputStream())
+        return (dataObject as PgpLiteralData).GetInputStream();
+    }
+
+    private static byte[] ReadFully(this Stream stream, int position = 0)
+    {
+        if (!stream.CanRead) throw new ArgumentException("This is not a readable stream.");
+
+        if (stream.CanSeek) stream.Position = 0;
+
+        using (var ms = new MemoryStream())
         {
-            Streams.PipeAll(clearData, ms);
+            stream.CopyTo(ms);
+
+            return ms.ToArray();
         }
-        ms.Position = 0;
-        return ms;
     }
 }
