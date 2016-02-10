@@ -43,3 +43,10 @@ nuget:
 
 artifacts:
   - path: '**\CertiPay.Common.Encryption.**.nupkg'
+
+deploy:
+- provider: NuGet
+  on: 
+    branch: master
+  api_key:
+    secure: tj8axlUnLaJXMzsVHzNj6dT8VROvH1ChDSv9bKkQG4oNRB/6pI4oefW5WAhuIDIE
