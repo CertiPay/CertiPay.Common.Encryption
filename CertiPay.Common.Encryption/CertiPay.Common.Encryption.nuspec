@@ -11,7 +11,7 @@
     <authors>CertiPay, Matt Wagner</authors>
     <owners>Matt Wagner</owners>
     <dependencies>
-      <dependency id="BouncyCastle" version="(1.7,)"/>
+      <dependency id="BouncyCastle" version="[1.7,2.0]"/>
     </dependencies>
   </metadata>
   <files>
