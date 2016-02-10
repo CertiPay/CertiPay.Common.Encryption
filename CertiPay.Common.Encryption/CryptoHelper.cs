@@ -10,18 +10,6 @@ namespace CertiPay.Common.Encryption
     {
         // The majority of the functionality encrypting/decrypting came from this answer: http://stackoverflow.com/a/10210465
 
-        private static PgpPrivateKey FindSecretKey(PgpSecretKeyRingBundle pgpSec, long keyId, char[] pass)
-        {
-            PgpSecretKey pgpSecKey = pgpSec.GetSecretKey(keyId);
-
-            if (pgpSecKey == null)
-            {
-                return null;
-            }
-
-            return pgpSecKey.ExtractPrivateKey(pass);
-        }
-
         public static string DecryptPgpData(Stream inputStream, Stream privateKeyStream, string passPhrase)
         {
             string output;
@@ -125,6 +113,18 @@ namespace CertiPay.Common.Encryption
             }
 
             return output;
+        }
+
+        private static PgpPrivateKey FindSecretKey(PgpSecretKeyRingBundle pgpSec, long keyId, char[] pass)
+        {
+            PgpSecretKey pgpSecKey = pgpSec.GetSecretKey(keyId);
+
+            if (pgpSecKey == null)
+            {
+                return null;
+            }
+
+            return pgpSecKey.ExtractPrivateKey(pass);
         }
 
         private static PgpPublicKey ReadPublicKey(Stream inputStream)
