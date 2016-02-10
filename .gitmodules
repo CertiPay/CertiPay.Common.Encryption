@@ -1,3 +1,0 @@
-[submodule "lib\\bouncycastle"]
-	path = lib\\bouncycastle
-	url = https://github.com/bcgit/bc-csharp.git
