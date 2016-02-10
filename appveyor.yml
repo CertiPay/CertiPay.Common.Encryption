@@ -9,7 +9,8 @@
 # version format
 version: 0.1.{build}
 
-shallow_clone: true
+install: 
+  - cmd: git submodule update --init --recursive
 
 #---------------------------------#
 #       build configuration       #
