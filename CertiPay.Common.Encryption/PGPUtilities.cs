@@ -12,15 +12,15 @@ public static class PGPUtilities
 {
     public static PgpPublicKey ImportPublicKey(this Stream publicIn)
     {
-        var pubRings =
-            new PgpPublicKeyRingBundle(PgpUtilities.GetDecoderStream(publicIn)).GetKeyRings().OfType<PgpPublicKeyRing>();
-        var pubKeys = pubRings.SelectMany(x => x.GetPublicKeys().OfType<PgpPublicKey>());
-        var pubKey = pubKeys.FirstOrDefault();
-        return pubKey;
+        return
+            new PgpPublicKeyRingBundle(PgpUtilities.GetDecoderStream(publicIn))
+            .GetKeyRings()
+            .OfType<PgpPublicKeyRing>()
+            .SelectMany(x => x.GetPublicKeys().OfType<PgpPublicKey>())
+            .FirstOrDefault();
     }
 
-    public static PgpSecretKey ImportSecretKey(
-        this Stream secretIn)
+    public static PgpSecretKey ImportSecretKey(this Stream secretIn)
     {
         var secRings =
             new PgpSecretKeyRingBundle(PgpUtilities.GetDecoderStream(secretIn)).GetKeyRings().OfType<PgpSecretKeyRing>();
