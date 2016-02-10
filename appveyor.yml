@@ -9,8 +9,8 @@
 # version format
 version: 0.1.{build}
 
-install: 
-  - cmd: nuget restore
+before_build: 
+  - nuget restore
 
 #---------------------------------#
 #       build configuration       #
