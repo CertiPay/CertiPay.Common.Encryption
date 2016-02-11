@@ -11,13 +11,14 @@ public static class PGPUtilities
 {
     private static readonly Encoding DefaultEncoding = Encoding.UTF8;
 
-    public static PgpPublicKey ImportPublicKey(this Stream publicIn)
+    public static PgpPublicKey ImportPublicKey(this Stream publicIn, Boolean forEncryption = true)
     {
         return
             new PgpPublicKeyRingBundle(PgpUtilities.GetDecoderStream(publicIn))
             .GetKeyRings()
             .OfType<PgpPublicKeyRing>()
             .SelectMany(x => x.GetPublicKeys().OfType<PgpPublicKey>())
+            .Where(key => !forEncryption || key.IsEncryptionKey)
             .FirstOrDefault();
     }
 
